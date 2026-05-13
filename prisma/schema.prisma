@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String?
+  password  String
+  createdAt DateTime   @default(now())
+  cartItems CartItem[]
+  orders    Order[]
+
+  // relação 1:1 (opcional) com Influencer
+  influencer  Influencer?   @relation("UserInfluencer")
+  CouponUsage CouponUsage[]
+}
+
+model Product {
+  id            String     @id @default(cuid())
+  slug          String     @unique
+  name          String
+  price         Float
+  originalPrice Float?
+  description   String
+  backImage     String
+  frontImage    String
+  badge         String?
+  cartItems     CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  size      String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId, size])
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  userId    String
+  total     Float
+  items     Json
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // histórico de usos de cupom vinculados a esta order
+  couponUsages CouponUsage[]
+}
+
+model Influencer {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  // relação 1:1 com User (nomeada)
+  user      User     @relation("UserInfluencer", fields: [userId], references: [id])
+  handle    String?  @unique
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relação 1:N com Coupon
+  coupons Coupon[] @relation("InfluencerCoupons")
+}
+
+model Coupon {
+  id                 String      @id @default(cuid())
+  code               String      @unique
+  influencerId       String?
+  // relação N:1 com Influencer (nomeada)
+  influencer         Influencer? @relation("InfluencerCoupons", fields: [influencerId], references: [id])
+  percentOff         Int
+  maxUses            Int? // null = unlimited
+  usesCount          Int         @default(0)
+  perUserLimit       Int? // e.g., 1
+  validFrom          DateTime?
+  validUntil         DateTime?
+  active             Boolean     @default(true)
+  totalDiscountGiven Int         @default(0) // armazenar em centavos (minor units)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  // relação 1:N com CouponUsage
+  usages CouponUsage[]
+}
+
+model CouponUsage {
+  id       String @id @default(cuid())
+  couponId String
+  // relação com Coupon
+  coupon   Coupon @relation(fields: [couponId], references: [id])
+
+  userId String? // opcional se guest checkout
+  // relação opcional com User
+  user   User?   @relation(fields: [userId], references: [id])
+
+  orderId String? // order id quando criado
+  // relação opcional com Order
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  amount    Int // desconto dado em centavos
+  createdAt DateTime @default(now())
+}
