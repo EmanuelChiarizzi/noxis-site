@@ -1,0 +1,29 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
+package-lock.json
+
+# Next / Build
+.next/
+out/
+dist/
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Env / DB
+.env
+.env.local
+.env.*.local
+dev.db
+
+# Logs
+logs/
+*.log
+
+# Misc
+coverage/
