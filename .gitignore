@@ -2,3 +2,5 @@ node_modules/
 .next/
 dev.db
 .env
+.vercel
+.env*.local
